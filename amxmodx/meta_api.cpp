@@ -962,20 +962,13 @@ void SV_DropClient_PostHook(CPlayer *pPlayer, qboolean crash, const char *buffer
 	}
 }
 
-// void SV_DropClient(client_t *cl, qboolean crash, const char *fmt, ...);
-DETOUR_DECL_STATIC3_VAR(SV_DropClient, void, client_t*, cl, qboolean, crash, const char*, format)
+// Xash3D version: void SV_DropClient(sv_client_t *cl, qboolean crash)
+DETOUR_DECL_STATIC2(SV_DropClient, void, client_t*, cl, qboolean, crash)
 {
-	char buffer[1024];
-
-	va_list ap;
-	va_start(ap, format);
-	ke::SafeVsprintf(buffer, sizeof(buffer) - 1, format, ap);
-	va_end(ap);
-
-	auto pPlayer = SV_DropClient_PreHook(cl->edict, crash, buffer, ARRAY_LENGTH(buffer));
-
-	DETOUR_STATIC_CALL(SV_DropClient)(cl, crash, "%s", buffer);
-
+	const char *buffer = crash ? "Connection problem" : "Disconnected";
+	
+	auto pPlayer = SV_DropClient_PreHook(cl->edict, crash, buffer, strlen(buffer) + 1);
+	DETOUR_STATIC_CALL(SV_DropClient)(cl, crash);
 	SV_DropClient_PostHook(pPlayer, crash, buffer);
 }
 
