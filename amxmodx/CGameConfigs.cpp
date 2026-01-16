@@ -680,7 +680,15 @@ SMCResult CGameConfig::ReadSMC_LeavingSection(const SMCStates *states)
 
 					if (dladdr(addressInBase, &info) != 0)
 					{
+						// Try dlopen on the file first, fallback to NULL (main executable) if it fails
 						void *handle = dlopen(info.dli_fname, RTLD_NOW);
+
+						if (!handle)
+						{
+							// Fallback: use dlopen(NULL) to get handle to main executable
+							// This is needed when engine is statically linked into the executable (e.g., Go binaries)
+							handle = dlopen(NULL, RTLD_NOW);
+						}
 
 						if (handle)
 						{

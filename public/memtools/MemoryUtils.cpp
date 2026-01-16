@@ -157,7 +157,7 @@ void *MemoryUtils::ResolveSymbol(void *handle, const char *symbol)
 #if defined(WIN32)
 
 	return GetProcAddress((HMODULE)handle, symbol);
-	
+
 #elif defined(__linux__)
 
 	void *addr = dlsym(handle, symbol);
@@ -171,6 +171,7 @@ void *MemoryUtils::ResolveSymbol(void *handle, const char *symbol)
 	struct stat dlstat;
 	int dlfile;
 	uintptr_t map_base;
+	uintptr_t lib_base_addr;
 	Elf32_Ehdr *file_hdr;
 	Elf32_Shdr *sections, *shstrtab_hdr, *symtab_hdr, *strtab_hdr;
 	Elf32_Sym *symtab;
@@ -185,12 +186,13 @@ void *MemoryUtils::ResolveSymbol(void *handle, const char *symbol)
 	symtab_hdr = NULL;
 	strtab_hdr = NULL;
 	table = NULL;
-	
+	lib_base_addr = dlmap->l_addr;
+
 	/* See if we already have a symbol table for this library */
 	for (size_t i = 0; i < m_SymTables.length(); i++)
 	{
 		libtable = m_SymTables[i];
-		if (libtable->lib_base == dlmap->l_addr)
+		if (libtable->lib_base == lib_base_addr)
 		{
 			table = &libtable->table;
 			break;
@@ -202,7 +204,7 @@ void *MemoryUtils::ResolveSymbol(void *handle, const char *symbol)
 	{
 		libtable = new LibSymbolTable();
 		libtable->table.Initialize();
-		libtable->lib_base = dlmap->l_addr;
+		libtable->lib_base = lib_base_addr;
 		libtable->last_pos = 0;
 		table = &libtable->table;
 		m_SymTables.append(libtable);
@@ -219,8 +221,16 @@ void *MemoryUtils::ResolveSymbol(void *handle, const char *symbol)
 	dlfile = open(dlmap->l_name, O_RDONLY);
 	if (dlfile == -1 || fstat(dlfile, &dlstat) == -1)
 	{
-		close(dlfile);
-		return NULL;
+		if (dlfile != -1) close(dlfile);
+		/* Fallback: try /proc/self/exe for main executable (when dlopen(NULL) was used) */
+		dlfile = open("/proc/self/exe", O_RDONLY);
+		if (dlfile == -1 || fstat(dlfile, &dlstat) == -1)
+		{
+			if (dlfile != -1) close(dlfile);
+			return NULL;
+		}
+		/* For main executable (non-PIE), symbols have absolute addresses */
+		lib_base_addr = 0;
 	}
 
 	/* Map library file into memory */
@@ -287,7 +297,7 @@ void *MemoryUtils::ResolveSymbol(void *handle, const char *symbol)
 		}
 
 		/* Caching symbols as we go along */
-		cur_sym = table->InternSymbol(sym_name, strlen(sym_name), (void *)(dlmap->l_addr + sym.st_value));
+		cur_sym = table->InternSymbol(sym_name, strlen(sym_name), (void *)(lib_base_addr + sym.st_value));
 		if (strcmp(symbol, sym_name) == 0)
 		{
 			symbol_entry = cur_sym;
