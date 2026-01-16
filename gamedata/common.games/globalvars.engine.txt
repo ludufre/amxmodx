@@ -59,7 +59,7 @@
 			"svs"    // server_static_t svs
 			{
 				"library"   "engine"
-				"linux"     "@svs"
+				"linux"     "@svs_"
 				"mac"       "@svs"
 			}
 
@@ -67,7 +67,7 @@
 			{
 				"library"   "engine"
 				"windows"   "\x55\x8B\xEC\x83\xEC\x2A\x83\x3D\x2A\x2A\x2A\x2A\x2A\x53\x56\x57\x0F\x84\x2A\x2A\x2A\x2A\xE8" // Host_ShutdownServer() uses "Server shutting down"
-				"linux"     "@sv"
+				"linux"     "@sv_"
 				"mac"       "@sv"
 			}
 
