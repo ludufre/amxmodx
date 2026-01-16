@@ -1,3 +1,14 @@
+Local Building (Docker)
+-----------------------
+
+```bash
+docker build -t amxmodx-builder:gcc-9 .
+docker run --rm -v $(pwd):/root/amxmodx amxmodx-builder:gcc-9
+```
+
+Output will be in the `./build/packages/` directory.
+
+------------------------------------------------------------------------------
 
 <p align="center">
  <img src="https://raw.githubusercontent.com/alliedmodders/amxmodx/refs/heads/master/editor/studio/AMXXLarge.bmp"/>
