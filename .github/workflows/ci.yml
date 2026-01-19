@@ -140,3 +140,93 @@ jobs:
           name: amxmodx-${{ matrix.os_short }}-${{ matrix.compiler_cc }}-${{ github.sha }}
           path: amxmodx/build/packages/
           retention-days: 7
+
+  release:
+    name: Create Release
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/1.9')
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Get version info
+        id: version
+        run: |
+          VERSION=$(cat product.version | tr -d '[:space:]')
+          GITREF=$(cat ref.version | tr -d '[:space:]')
+          if [[ "${{ github.ref }}" == "refs/heads/1.9" ]]; then
+            BASE_COMMIT="33333cb25b4e74e837fa327e0bbab6f99937da18"
+          else
+            BASE_COMMIT="0f892fc5fb647fcdd995931bd47d6d2e3a4807c5"
+          fi
+          GIT_COUNT=$(git rev-list --count ${BASE_COMMIT}..HEAD)
+          TAG_NAME="v${VERSION}-${GITREF}-xash-git${GIT_COUNT}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "gitref=$GITREF" >> $GITHUB_OUTPUT
+          echo "git_count=$GIT_COUNT" >> $GITHUB_OUTPUT
+          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION, Git: $GIT_COUNT, Tag: $TAG_NAME"
+
+      - name: Create release packages
+        run: |
+          mkdir -p output
+          VERSION="${{ steps.version.outputs.version }}"
+          GITREF="${{ steps.version.outputs.gitref }}"
+          GIT_COUNT="${{ steps.version.outputs.git_count }}"
+
+          # Função para obter plataforma do nome do artifact
+          get_platform() {
+            case "$1" in
+              *-windows-*) echo "windows" ;;
+              *-linux-gcc-*) echo "linux-gcc" ;;
+              *-linux-clang-*) echo "linux-clang" ;;
+              *) echo "unknown" ;;
+            esac
+          }
+
+          # Processar cada artifact
+          for artifact_dir in artifacts/amxmodx-*/; do
+            [ -d "$artifact_dir" ] || continue
+
+            artifact_name=$(basename "$artifact_dir")
+            platform=$(get_platform "$artifact_name")
+            echo "Processando: $artifact_name (plataforma: $platform)"
+
+            # Para cada subpasta (base, cstrike, etc.)
+            for subfolder in "$artifact_dir"/*/; do
+              [ -d "$subfolder" ] || continue
+
+              subname=$(basename "$subfolder")
+
+              if [[ "$platform" == "windows" ]]; then
+                outname="amxmodx-${VERSION}-${GITREF}-xash-git${GIT_COUNT}-${subname}-${platform}.zip"
+                echo "  Criando: $outname"
+                (cd "$subfolder" && zip -rq "$GITHUB_WORKSPACE/output/$outname" .)
+              else
+                outname="amxmodx-${VERSION}-${GITREF}-xash-git${GIT_COUNT}-${subname}-${platform}.tar.gz"
+                echo "  Criando: $outname"
+                (cd "$subfolder" && tar -czf "$GITHUB_WORKSPACE/output/$outname" .)
+              fi
+            done
+          done
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag_name }}
+          name: ${{ steps.version.outputs.tag_name }}
+          draft: false
+          prerelease: false
+          files: |
+            output/*.zip
+            output/*.tar.gz
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
