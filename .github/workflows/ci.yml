@@ -140,3 +140,51 @@ jobs:
           name: amxmodx-${{ matrix.os_short }}-${{ matrix.compiler_cc }}-${{ github.sha }}
           path: amxmodx/build/packages/
           retention-days: 7
+
+  release:
+    name: Create Release
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/1.9')
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Prepare packages
+        run: |
+          mkdir -p packages
+          # Encontrar e copiar todos os zips dos artifacts
+          find artifacts -name "*.zip" -exec cp {} packages/ \;
+          ls -la packages/
+
+      - name: Run repackage script
+        working-directory: packages
+        run: |
+          chmod +x ${{ github.workspace }}/tools/repackage.sh
+          ${{ github.workspace }}/tools/repackage.sh
+
+      - name: Get version info
+        id: version
+        run: |
+          FILENAME=$(ls packages/output/ | head -1)
+          VERSION=$(echo "$FILENAME" | sed -E 's/amxmodx-([0-9.]+)-git.*/\1/')
+          DATE=$(date +%Y%m%d)
+          TAG_NAME="v${VERSION}-xash-${DATE}"
+          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+          echo "Tag: $TAG_NAME"
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag_name }}
+          name: AMX Mod X ${{ steps.version.outputs.tag_name }}
+          draft: false
+          prerelease: ${{ github.ref == 'refs/heads/1.9' }}
+          files: packages/output/*
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
