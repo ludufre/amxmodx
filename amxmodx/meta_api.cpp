@@ -966,7 +966,7 @@ void SV_DropClient_PostHook(CPlayer *pPlayer, qboolean crash, const char *buffer
 DETOUR_DECL_STATIC2(SV_DropClient, void, client_t*, cl, qboolean, crash)
 {
 	const char *buffer = crash ? "Connection problem" : "Disconnected";
-	
+
 	auto pPlayer = SV_DropClient_PreHook(cl->edict, crash, buffer, strlen(buffer) + 1);
 	DETOUR_STATIC_CALL(SV_DropClient)(cl, crash);
 	SV_DropClient_PostHook(pPlayer, crash, buffer);

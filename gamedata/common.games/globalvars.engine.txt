@@ -59,7 +59,7 @@
 			"svs"    // server_static_t svs
 			{
 				"library"   "engine"
-				"linux"     "@svs"
+				"linux"     "@svs_"
 				"mac"       "@svs"
 			}
 
@@ -67,7 +67,7 @@
 			{
 				"library"   "engine"
 				"windows"   "\x8B\x2A\x2A\x2A\x2A\x2A\x8D\x2A\x2A\x2A\x2A\x2A\x53\x33\x2A\x89"  // SVC_PlayerInfo()
-				"linux"     "@sv"
+				"linux"     "@sv_"
 				"mac"       "@sv"
 			}
 

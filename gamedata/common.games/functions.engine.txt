@@ -19,7 +19,7 @@
 			{
 				"library"   "engine"
 				"windows"   "\x55\x8B\x2A\x81\x2A\x2A\x2A\x2A\x2A\x8B\x2A\x2A\x53\x56\x8D"
-				"linux"     "@SV_DropClient"
+				"linux"     "@SV_DropClient_"
 				"mac"       "@SV_DropClient"
 			}
 			"Cvar_DirectSet" // void Cvar_DirectSet(struct cvar_s *var, char *value);
