@@ -170,8 +170,7 @@ jobs:
       - name: Get version info
         id: version
         run: |
-          FILENAME=$(ls packages/output/ | head -1)
-          VERSION=$(echo "$FILENAME" | sed -E 's/amxmodx-([0-9.]+)-git.*/\1/')
+          VERSION=$(cat product.version | tr -d '[:space:]')
           DATE=$(date +%Y%m%d)
           TAG_NAME="v${VERSION}-xash-${DATE}"
           echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
