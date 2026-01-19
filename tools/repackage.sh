@@ -63,13 +63,21 @@ for zipfile in "$WORKDIR"/amxmodx-*.zip; do
         [ -d "$subfolder" ] || continue
 
         subname=$(basename "$subfolder")
-        outname="amxmodx-${version}-git${gitversion}-xash-${subname}-${platform}.zip"
+        basename="amxmodx-${version}-git${gitversion}-xash-${subname}-${platform}"
 
-        echo "  Criando: $outname"
+        # Entrar na subpasta para empacotar o conteúdo sem o nome da pasta
+        cd "$subfolder"
 
-        # Entrar na pasta temporária e criar zip com o conteúdo da subpasta
-        cd "$TEMPDIR"
-        zip -rq "$OUTDIR/$outname" "$subname"
+        if [[ "$platform" == "windows" ]]; then
+            outname="${basename}.zip"
+            echo "  Criando: $outname"
+            zip -rq "$OUTDIR/$outname" .
+        else
+            outname="${basename}.tar.gz"
+            echo "  Criando: $outname"
+            tar -czf "$OUTDIR/$outname" .
+        fi
+
         cd "$WORKDIR"
     done
 
