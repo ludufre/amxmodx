@@ -131,7 +131,8 @@ class CPlayer
 				return;
 			}
 
-			ServerStatic->clients[index].sendinfo = false;
+			// Disabled for Xash3D FWGS: sv_client_s structure does not have the sendinfo field
+			//ServerStatic->clients[index].sendinfo = false;
 
 			ModelsUpdateQueue.append(index);
 		}
