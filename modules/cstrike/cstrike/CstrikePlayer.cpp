@@ -66,7 +66,9 @@ void StartFrame()
 		RETURN_META(MRES_IGNORED);
 	}
 
-	ServerStatic->clients[ModelsUpdateQueue.popCopy()].sendinfo = true;
+	// Disabled for Xash3D FWGS: sv_client_s structure does not have the sendinfo field
+	//ServerStatic->clients[ModelsUpdateQueue.popCopy()].sendinfo = true;
+	ModelsUpdateQueue.popCopy();
 
 	RETURN_META(MRES_IGNORED);
 }
